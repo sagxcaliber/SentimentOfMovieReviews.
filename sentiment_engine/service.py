@@ -3,10 +3,9 @@ import cohere
 from fastapi.encoders import jsonable_encoder
 import json
 
-from config import api_key, prompt, max_token, model, temperature
+from config import api_key, prompt, max_token, model, temperature, model_v2
 from sentiment_engine.helper.sentiment_helper import SentimentAnalysisInput, AnalysisResponses, AnalysisResponse
 from type import ReviewInput
-
 
 class SentimentService:
     def __init__(self):
@@ -22,30 +21,44 @@ class SentimentService:
         )
         return response.generations[0].text.strip()
 
+    # using this v2 version with classify fine-tuning model
+    def check_sentiment_v2(self, review: SentimentAnalysisInput):
+        response = self.co.classify(
+            model=model_v2,
+            inputs=[review.review]
+        )
+        return response.classifications[0]
+
     def fetch_sentiment(self, review: ReviewInput):
+
+        classification = self.check_sentiment_v2(
+            review=SentimentAnalysisInput(review=review.review)
+        )
+
         final_response = AnalysisResponses(response=[
             AnalysisResponse(
-                review=review.review
-                , result=self.check_sentiment(
-                    review=SentimentAnalysisInput(
-                        review=review.review
-                    )
-                )
+                review=classification.input
+                , result=classification.prediction
+                , score=classification.confidence
             )
         ])
-        res = jsonable_encoder(final_response)
-        self.data.append(res.get('response')[0])
-        self.dump_reviews()
+        res = jsonable_encoder(final_response.response)
+        self.dump_reviews(data=res)
         return res
 
-    def list_reviews(self):
-        with open('./output.json', 'r') as f:
-            output_data = json.load(f)
+    @staticmethod
+    def list_reviews():
+        history = []
+        try:
+            with open('history.json', 'r') as f:
+                history = json.load(f)
+        except FileNotFoundError:
+            history = []
+        finally:
+            return history[::-1] if history else []
 
-        return [] if not output_data else output_data
-
-    def dump_reviews(self):
-        res:list = self.list_reviews()
-        res.extend(self.data)
-        with open('./output.json', 'a') as f:
-            json.dump(res, f)
+    def dump_reviews(self, data):
+        history = self.list_reviews()
+        history.extend(data)
+        with open('history.json', 'w') as f:
+            json.dump(history, f)

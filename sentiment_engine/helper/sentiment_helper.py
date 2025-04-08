@@ -11,6 +11,14 @@ class SentimentAnalysisInput:
 class AnalysisResponse:
     review: str
     result: str
+    score: float
+
+
+@dataclass
+class AnalysisResponseV2:
+    input: str
+    prediction: str
+    confidence: str
 
 
 @dataclass
