@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi import status
 import time
 import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
+
 
 from type import ReviewInput
 from utils import Result
@@ -10,6 +12,13 @@ from sentiment_engine.service import SentimentService
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post('/checkSentiment')
 async def check_sentiment_review(
@@ -34,7 +43,7 @@ async def check_sentiment_review(
             res.set()
 
     except Exception as err:
-        res.set(r_obj=str(err)
+        res.set(message=str(err)
                 , fetch_time=(time.time() - start_time)
                 )
     finally:
@@ -63,7 +72,7 @@ async def check_sentiment_review(
             res.set(status_code=status.HTTP_400_BAD_REQUEST,message=NO_DATA)
 
     except Exception as err:
-        res.set(r_obj=str(err)
+        res.set(message=str(err)
                 , fetch_time=(time.time() - start_time)
                 )
     finally:
