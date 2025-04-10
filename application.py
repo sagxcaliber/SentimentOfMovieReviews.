@@ -69,7 +69,7 @@ async def check_sentiment_review(
             )
 
         else:
-            res.set(status_code=status.HTTP_400_BAD_REQUEST,message=NO_DATA)
+            res.set(status_code=status.HTTP_200_OK,message=NO_DATA)
 
     except Exception as err:
         res.set(message=str(err)
